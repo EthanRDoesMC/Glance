@@ -29,16 +29,6 @@
 
 %hook SBSearchGesture
 
-- (id)init
-{
-	if ((self = %orig())) {
-		UIPanGestureRecognizer **_panGestureRecognizer = CHIvarRef(self, _panGestureRecognizer, UIPanGestureRecognizer *);
-		if (_panGestureRecognizer) {
-			[*_panGestureRecognizer addTarget:self action:@selector(glance_panGestureRecognizer:)];
-		}
-	}
-	return self;
-}
 
 static CGFloat clamped(CGFloat value)
 {
@@ -84,31 +74,6 @@ static void updateForOffset(CGFloat offset)
 	}
 }
 
-%new
-- (void)glance_panGestureRecognizer:(UIPanGestureRecognizer *)recognizer
-{
-	CGFloat offset = [recognizer translationInView:recognizer.view].y;
-	updateForOffset(offset);
-	if (recognizer.state == UIGestureRecognizerStateEnded) {
-		baseOffset += offset;
-		if (baseOffset < -400) {
-			baseOffset = -400;
-		} else if (baseOffset > 0) {
-			baseOffset = 0;
-		}
-	}
-}
-
-%end
-
-%hook SBSearchScrollView
-
-- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)recognizer
-{
-	%orig();
-	return YES;
-}
-
 %end
 
 static void ResetStyle(void)
@@ -133,6 +98,21 @@ static void ResetStyle(void)
 }
 
 %end
+//unlock
+%new
+- (void)glance_panGestureRecognizer:(UIPanGestureRecognizer *)recognizer
+{
+	CGFloat offset = [recognizer translationInView:recognizer.view].y;
+	updateForOffset(offset);
+	if (recognizer.state == UIGestureRecognizerStateEnded) {
+		baseOffset += offset;
+		if (baseOffset < -400) {
+			baseOffset = -400;
+		} else if (baseOffset > 0) {
+			baseOffset = 0;
+		}
+	}
+}
 
 %hook SBUIController
 
