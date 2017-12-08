@@ -25,10 +25,19 @@
 + (SBIconController *)sharedInstance;
 - (UIView *)contentView;
 - (SBRootFolderController *)_rootFolderController;
+- (void)_awayControllerUnlocked:(id)unlocked;
 @end
 
-%hook SBSearchGesture
+%hook SBIconController
 
+- (void)_awayControllerUnlocked:(id)unlocked {
+%orig;
+didStartUnlockProcess();
+NSTimer *fadeintimer = [NSTimer scheduledTimerWithTimeInterval: 5.0
+                      target: self
+                      selector:@selector(fadeinvoid:)
+                      userInfo: nil repeats:NO];
+}
 
 static CGFloat clamped(CGFloat value)
 {
@@ -73,7 +82,30 @@ static void updateForOffset(CGFloat offset)
 		}
 	}
 }
-
+static void didUnlockStartProcess()
+{
+	CGFloat offset = -400;
+	updateForOffset(offset);
+		baseOffset += offset;
+		if (baseOffset < -400) {
+			baseOffset = -400;
+		} else if (baseOffset > 0) {
+			baseOffset = 0;
+		}
+		}
+%new
+-(void)fadeinvoid:(NSTimer *)timer
+{
+	if ([views anyObject]) {
+		[UIView animateWithDuration:0.333 delay:0.0 options:UIViewAnimationOptionAllowUserInteraction | UIViewAnimationOptionBeginFromCurrentState animations:^{
+			baseOffset = 0.0;
+			for (UIView *view in [views allObjects]) {
+				view.alpha = 1.0;
+			}
+			[views removeAllObjects];
+		} completion:NULL];
+	}
+}
 %end
 
 static void ResetStyle(void)
@@ -98,21 +130,6 @@ static void ResetStyle(void)
 }
 
 %end
-//unlock
-%new
-- (void)glance_panGestureRecognizer:(UIPanGestureRecognizer *)recognizer
-{
-	CGFloat offset = [recognizer translationInView:recognizer.view].y;
-	updateForOffset(offset);
-	if (recognizer.state == UIGestureRecognizerStateEnded) {
-		baseOffset += offset;
-		if (baseOffset < -400) {
-			baseOffset = -400;
-		} else if (baseOffset > 0) {
-			baseOffset = 0;
-		}
-	}
-}
 
 %hook SBUIController
 
